@@ -11,40 +11,50 @@ fun same_string(s1 : string, s2 : string) =
 fun all_except_option (s, xs) = 
     case xs of
 	[] => NONE
-      | x::[] => if same_string(x, s)
-		 then []
-		 else xs
       | x::xs' => if same_string(x, s)
-		  then xs
-		  else x::all_except_option(s, xs')
+		  then SOME xs'
+		  else case all_except_option(s, xs') of
+			   NONE => NONE 
+			 | SOME tail => SOME (x::tail)
+					   
 
-fun get_substitutions (list, s) =
+fun get_substitutions1 (list, s) =
   case list of
       [] => []
-    | l::[] => all_except_option(s, l)
-    | l::list' => all_exception_option(s, l) @ get_substitutions(list', s)
+    | l::list' => case all_except_option(s, l) of
+		    NONE => [] 
+		   | SOME sublist => sublist @ get_substitutions1(list', s)
+
 
 fun get_substitutions2 (list, s) =
-  let fun get_sub_helper(list, s, acc) =
+  let
+      fun extract_list_val(opt) =
+	case opt of
+	    NONE => []
+	  | SOME sublist => sublist
+      fun get_sub_helper(list, s, acc) =
 	case list of
 	    [] => acc
-	  | l::[] => get_sub_helper([], s, all_except_option(s, l) @ acc)
-	  | l::list'=> get_sub_helper(list', s, all_exception_option(s, l) @ acc)
+	  | l::list'=> get_sub_helper(list', s, acc @ extract_list_val(all_except_option(s, l)))
   in
       get_sub_helper(list, s, [])
   end
 
-fun similiar_names (list, name) =
+
+fun similar_names (list, name) =
   let fun similar_helper(subs, name) =
 	case subs of
-	    [] => name::[]
-	  | sub::_ => case name of
-			  {first:x, middle:y, last:z} => {first:sub, middle:y, last:z}
+	    [] => []
+	  | sub::subs' => case name of
+			      {first=x, last=y, middle=z} =>
+			      [{first=sub, last=y, middle=z}] @ similar_helper(subs', name)
   in
       case name of
-	  {first: x, middle: y, last: z} =>
-	  let val firstname_subs = get_substitutions2(list, first)
-	  in similar_helper(firstname_subs, name)
+	  {first=x, middle=y, last=z} =>
+	  let
+	      val firstname_subs = get_substitutions2(list, x)
+	  in
+	      name::similar_helper(firstname_subs, name)
 	  end
   end
       
@@ -66,15 +76,16 @@ exception IllegalMove
 
 fun card_color (card) =
   case card of
-      {1:_, 2:Clubs) => Black    
-    | {1:_, 2:Spades} => Black
+      {1=Clubs,  2=_} => Black    
+    | {1=Spades, 2=_} => Black
     | _ => Red
-	       
+
+
 
 fun card_value (card) =
   case card of
-      {1:_, 2: Num(int)} => int
-    | {1:_, 2: Ace} => 11
+      {1=_ , 2=Num(int)} => int
+    | {1=_ , 2=Ace} => 11
     | _ => 10
 
 
@@ -84,37 +95,65 @@ fun remove_card (cards, c, e) =
 	    [] => if removed
 		  then []
 		  else raise e
-	  | card::[] => if card = c and not removed
-			then remove_helper([], c, e, true)
-			else card::remove_helper([], c, e, removed)
-	  | card::cards' => if card = c and not removed
+	  | card::cards' => if card = c andalso removed = false
 			    then remove_helper(cards', c, e, true)
 			    else card::remove_helper(cards', c, e, removed)
   in
       remove_helper(cards, c, e, false)
   end
-      
-		 
+      	 
 	       
 fun all_same_color (cards) =
   case cards of
       [] => true
     | card::[] => true
-    | card1::card2::[] => (card_color(card1) = card_color(card2)) and all_same_color([])
-    | card1::card2::cards' = (card_color(card1) = card_color(card2)) and all_same_color(cards')
+    | card1::card2::cards' => (card_color(card1) = card_color(card2)) andalso all_same_color(cards')
 
-
-fun card_sum (cards) =
+											    
+fun sum_cards (cards) =
   let fun sum_helper(cards, acc) =
 	case cards of
 	    [] => acc
-	  | card::[]  => sum_helper([], acc + card_value(card))
-	  | card::cards' => sum_helper([], acc + card_value(cards')) 
+	  | card::cards' => sum_helper(cards', acc + card_value(card)) 
   in
       sum_helper(cards, 0)
   end
 
 
+
+fun score (cards, goal) =
+  let
+      val sum = sum_cards(cards)
+      val prelim_score = if sum > goal
+			 then 3 * (sum - goal)
+			 else (goal - sum)
+				  
+  in
+      if all_same_color(cards)
+      then prelim_score div 2
+      else prelim_score	       
+  end
+
+
+fun officiate (cards, moves, goal) =
+  let
+      (* Returns held cards and remaining deck cards after a move *)
+      fun play (held, goal, cards, moves) =
+	case moves of
+	    [] => score(held, goal)
+	  | move::moves' => case move of
+			      Discard(card) => play(remove_card(held, card, IllegalMove), goal, cards, moves')
+			    | Draw => case cards of
+					  [] => score(held, goal)
+					| card::[] => play(card::held, goal, [], moves')
+					| card::cards' => play(card::held, goal, cards', moves')
+							   
+  in
+      play([], goal, cards, moves)
+  end   
+	
+  
+		  
       
 
 																		       
