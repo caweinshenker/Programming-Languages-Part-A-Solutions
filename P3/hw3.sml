@@ -74,7 +74,59 @@ fun longest_string4 strings =
 
 			
 fun longest_capitalized strings =
-  longest_string3 (only_capitals strings)
+  (longest_string3 o only_capitals) strings
 
+		  
+fun rev_string strings =
+  (String.implode o List.rev o String.explode) strings
 
+fun first_answer f =
+  fn list => case list of
+		 [] => raise NoAnswer
+	       | x::xs' => case (f x) of
+			       SOME x => x
+			     | NONE => first_answer f xs'
+						    
+
+(*
+let val found =  (List.find(fn x => case (f x) of
+						      NONE => false
+						    | SOME x => true
+					)
+					list )
+	     in
+		 case found of
+		     NONE => raise NoAnswer
+		  | SOME found => found
+	     end
+*)		 
+			  
+fun all_answers f =
+  fn list =>
+     let fun all_so_far (acc, list') =
+	   case list' of
+	       [] => SOME []
+	     | x::xs' => case (f x) of
+			     NONE => NONE
+			   | SOME x => all_so_far( [x] @ acc, xs')
+     in
+	 all_so_far([], list)
+     end
+	 
+				    
+
+		 
+		
+						  
+    
+    
+    
+  
+		      
+	   
+	   
+     	 
+		     
+		 
+			    
 		 	     
