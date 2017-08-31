@@ -107,7 +107,7 @@ fun all_same_color (cards) =
   case cards of
       [] => true
     | card::[] => true
-    | card1::card2::cards' => (card_color(card1) = card_color(card2)) andalso all_same_color(cards')
+    | card1::card2::cards' => (card_color(card1) = card_color(card2)) andalso all_same_color(card2::cards')
 
 											    
 fun sum_cards (cards) =
@@ -137,16 +137,17 @@ fun score (cards, goal) =
 
 fun officiate (cards, moves, goal) =
   let
-      (* Returns held cards and remaining deck cards after a move *)
       fun play (held, goal, cards, moves) =
-	case moves of
-	    [] => score(held, goal)
-	  | move::moves' => case move of
-			      Discard(card) => play(remove_card(held, card, IllegalMove), goal, cards, moves')
-			    | Draw => case cards of
-					  [] => score(held, goal)
-					| card::[] => play(card::held, goal, [], moves')
-					| card::cards' => play(card::held, goal, cards', moves')
+	if sum_cards(held) > goal
+	then score(held, goal)
+	else case moves of
+		 [] => score(held, goal)
+	       | move::moves' => case move of
+				     Discard(card) => play(remove_card(held, card, IllegalMove), goal, cards, moves')
+				   | Draw => case cards of
+						 [] => score(held, goal)
+					       | card::[] => play(card::held, goal, [], moves')
+					       | card::cards' => play(card::held, goal, cards', moves')
 							   
   in
       play([], goal, cards, moves)
