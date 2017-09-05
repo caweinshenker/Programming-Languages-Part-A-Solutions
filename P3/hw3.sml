@@ -138,14 +138,15 @@ fun match (va, ptn) =
    | (Tuple vs, TupleP ps) =>  if List.length vs = List.length ps
 				then all_answers match (ListPair.zip(vs, ps))
 				else NONE
-   | (Constructor(s2, v), ConstructorP(s1, p)) => if s1 = s2
+   | (Constructor(s', v), ConstructorP(s'', p)) => if s' = s''
 						 then match (v, p)
 						 else NONE
    | (_ , _) => NONE
 
 
 fun first_match va ptns = 
- SOME (first_answer (fn x => match(va, x)) ptns) handle NoAnswer => NONE
+  SOME (first_answer (fn x => match(va, x)) ptns)
+  handle NoAnswer => NONE
 
 
 					 
