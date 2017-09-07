@@ -62,7 +62,6 @@ class MyBoard < Board
       locations = @current_block.current_rotation
       displacement = @current_block.position
       block_size = @current_block.block_size
-      puts block_size
       (0..block_size-1).each{|index|
         current = locations[index];
         @grid[current[1]+displacement[1]][current[0]+displacement[0]] =
@@ -80,7 +79,7 @@ class MyTetris < Tetris
 
  def key_bindings
      @root.bind('u', proc {@board.rotate_clockwise; @board.rotate_clockwise})
-     @root.bind('c', proc {if @board.score >= 100
+     @root.bind('c', proc {if @board.score >= 100 and @board.cheats < 1
                                 @board.score = @board.score - 100;
                                 @board.cheats = @board.cheats + 1
                             end})
