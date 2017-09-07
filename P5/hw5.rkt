@@ -117,20 +117,31 @@
   (ifgreater (isaunit e1) (int 0) e2 e3))
 
 (define (mlet* lstlst e2) 
-  (let ([f (lambda (exps env) 
-             (cond [(null? exps) (eval-under-env e2 env)]
-                   [#t (f (cdr exps) cons( (cons (car (car exps)) (eval-under-env (cdr (car exps)) env) env)))]))])
-  (f lstlst '())))
+  (if (null? lstlst)
+      e2
+      (mlet (caar lstlst)
+            (cdar lstlst)
+            (mlet* (cdr lstlst) e2))))
                                                
-(define (ifeq e1 e2 e3 e4) "CHANGE")
+(define (ifeq e1 e2 e3 e4)
+  (mlet* (list (cons "_x" e1) (cons  "_y" e2))
+        (ifgreater (var "_x") (var "_y") e4 (ifgreater (var "_y") (var "_x") e4 e3))))
 
 ;; Problem 4
 
-(define mupl-map "CHANGE")
+(define mupl-map 
+  (fun "map" "f" 
+       (fun "apply" "lst" 
+            (ifaunit (var "lst")
+                     (aunit)
+                     (apair (call (var "f") (fst (var "lst"))) 
+                            (call (var "apply") (snd (var "lst"))))))))
+                         
 
 (define mupl-mapAddN 
-  (mlet "map" mupl-map
-        "CHANGE (notice map is now in MUPL scope)"))
+  (mlet "map" mupl-map (fun "mupl-mapAddN" "n"
+                            (call (var "map") 
+                                  (fun #f "x" (add (var "x") (var "n")))))))
 
 ;; Challenge Problem
 
